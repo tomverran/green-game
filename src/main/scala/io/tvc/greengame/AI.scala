@@ -25,7 +25,7 @@ trait AI[F[_]] {
 
 object AI {
 
-  case class Player(name: String, hand: List[Card], tokens: List[Token])
+  case class Player(name: String, hand: Vector[Card], tokens: Vector[Token])
   case class PlayerWithCard(player: Player, card: Option[Card])
 
   implicit val playerShow: Show[Player] =
@@ -47,8 +47,8 @@ object AI {
     def pickCardToPlay(player: Player): BoardReader[F, PlayerWithCard] =
       ReaderT { board =>
         player.hand.sortBy(score(board.forecasts.head)(_).length * -1) match {
-          case chosen :: others => F.pure(PlayerWithCard(player.copy(hand = others), Some(chosen)))
-          case Nil => F.pure(PlayerWithCard(player, None))
+          case chosen +: others => F.pure(PlayerWithCard(player.copy(hand = others), Some(chosen)))
+          case Vector() => F.pure(PlayerWithCard(player, None))
         }
       }
 
@@ -65,7 +65,7 @@ object AI {
         val bestPerRound: List[CardWithRoi] = upcoming.flatMap { fc =>
           val forecastEstimate = fc.copy(demand = 4) // we're not supposed to know the demand so go with an optimistic estimate
           val returns = affordable.map(card => CardWithRoi(score(forecastEstimate)(card.card).length - card.cost, card))
-          val bestRoi = returns.toList.sortBy(_.roi * -1).headOption
+          val bestRoi = returns.sortBy(_.roi * -1).headOption
           bestRoi
         }
 

@@ -1,12 +1,15 @@
 package io.tvc.greengame
+import cats.effect.IO
 import cats.syntax.show._
-import ShowInstances._
-import cats.Id
+import io.tvc.greengame.ShowInstances._
+import io.tvc.greengame.Shuffler.syncShuffler
 
 object Main extends App {
-  val (board, players) = Board.setup
-  println(show"$board $players")
-
-  val (finalBoard, finished) = Game.runGame[Id](AI.fairlySensibleAI, players).run(board)
-  println(show"$finalBoard ${finished.finalPlayers}")
+  (
+    for {
+      (board, players) <- Board.setup[IO]
+      (finalBoard, finalPlayers) <- Game.runGame[IO](AI.fairlySensibleAI, players).run(board)
+      unit <- IO(println(show"$finalBoard " + show"${finalPlayers.finalPlayers}"))
+    } yield unit
+  ).unsafeRunSync
 }

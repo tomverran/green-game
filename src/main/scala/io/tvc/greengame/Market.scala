@@ -10,15 +10,15 @@ import cats.instances.int._
 
 import scala.language.higherKinds
 
-case class Market(cards: Set[CostedCard]) {
-  def remove(card: CostedCard) = Market(cards - card)
-  def findAffordable(maxCost: Int): Set[CostedCard] = cards.filter(_.cost <= maxCost)
+case class Market(cards: Vector[CostedCard]) {
+  def remove(card: CostedCard) = Market(cards.filter(_ != card))
+  def findAffordable(maxCost: Int): Vector[CostedCard] = cards.filter(_.cost <= maxCost)
   def asMap: Map[Int, Card] = cards.map(c => c.cost -> c.card).toMap
 }
 
 object Market {
 
-  val costs = List(0, 1, 1, 2, 2, 3, 3)
+  val costs = Vector(0, 1, 1, 2, 2, 3, 3)
   case class CostedCard(cost: Int, card: Card)
 
   implicit val costedCardShow: Show[CostedCard] =
@@ -33,13 +33,13 @@ object Market {
       val (newMarket, newDeck) = costs.foldLeft(board.market.asMap -> board.unusedCards) {
         case ((marketSoFar, deckSoFar), cost) =>
           (marketSoFar.get(cost), deckSoFar) match {
-            case (None, h :: t) => marketSoFar.updated(cost, h) -> t
+            case (None, h +: t) => marketSoFar.updated(cost, h) -> t
             case (_, _) => marketSoFar -> deckSoFar
           }
       }
 
       board.copy(
-        market = Market(newMarket.map { case (cost, card) => CostedCard(cost, card) }.toSet),
+        market = Market(newMarket.map { case (cost, card) => CostedCard(cost, card) }.toVector),
         unusedCards = newDeck
       )
     }

@@ -8,6 +8,8 @@ import io.tvc.greengame.Scoring.Token.Green
 import io.tvc.greengame.Weather.Forecast
 import cats.syntax.applicative._
 
+import scala.language.higherKinds
+
 object Scoring {
 
   sealed trait Token extends Product with Serializable
@@ -42,7 +44,7 @@ object Scoring {
     * Given a bunch of players who have just chosen cards, apply scores to them
     * then order the list by the most sustainable player
     */
-  def applyScores[F[_]](playerWithCard: List[PlayerWithCard])(implicit F: Applicative[F]): BoardReader[F, List[Player]] =
+  def applyScores[F[_]](playerWithCard: Vector[PlayerWithCard])(implicit F: Applicative[F]): BoardReader[F, Vector[Player]] =
     ReaderT { board =>
       playerWithCard.map {
         case PlayerWithCard(pl, None) => pl -> List.empty[Token]

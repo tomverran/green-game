@@ -4,6 +4,15 @@ version := "0.1"
 
 scalaVersion := "2.12.6"
 
-scalacOptions += "-Ypartial-unification"
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
 
-libraryDependencies += "org.typelevel" %% "cats-core" % "1.1.0"
+scalacOptions ++= List(
+  "-Ypartial-unification",
+  "-P:bm4:no-filtering:y"
+)
+
+libraryDependencies ++= List(
+  "org.typelevel" %% "cats-core" % "1.1.0",
+  "org.typelevel" %% "cats-effect" % "0.10.1",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+)

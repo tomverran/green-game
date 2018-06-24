@@ -15,7 +15,7 @@ object Weather {
   implicit val weatherShow: Show[Weather] =
     Show.fromToString[Weather]
 
-  val all: List[Weather] = List(
+  val all: Vector[Weather] = Vector(
     Sunny, Windy, Cloudy
   )
 
