@@ -2,7 +2,7 @@ package io.tvc.greengame
 import cats.effect.IO
 import cats.syntax.show._
 import io.tvc.greengame.ShowInstances._
-import io.tvc.greengame.Shuffler.syncShuffler
+import io.tvc.greengame.Random.syncRandom
 
 object Main extends App {
   (

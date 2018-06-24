@@ -1,5 +1,5 @@
 package io.tvc.greengame
-import cats.{Applicative, Show}
+import cats.{Applicative, Monad, Show}
 import cats.data.StateT
 import io.tvc.greengame.AI.Player
 import io.tvc.greengame.Game.GameState
@@ -28,21 +28,14 @@ object Market {
     * Given a board with a potentially depleted market, attempt to replenish it
     * by taking cards from the unused cards deck. Bad things will happen if you run out of cards
     */
-  def replenishMarket[F[_] : Applicative]: GameState[F, Unit] =
-    StateT.modify[F, Board] { board =>
-      val (newMarket, newDeck) = costs.foldLeft(board.market.asMap -> board.unusedCards) {
-        case ((marketSoFar, deckSoFar), cost) =>
-          (marketSoFar.get(cost), deckSoFar) match {
-            case (None, h +: t) => marketSoFar.updated(cost, h) -> t
-            case (_, _) => marketSoFar -> deckSoFar
-          }
-      }
-
-      board.copy(
-        market = Market(newMarket.map { case (cost, card) => CostedCard(cost, card) }.toVector),
-        unusedCards = newDeck
-      )
-    }
+  def replenishMarket[F[_] : Monad : Random]: GameState[F, Unit] =
+    for {
+      board <- StateT.get[F, Board]
+      oldCards = board.market.cards.sortBy(_.cost).map(_.card)
+      newCards <- Board.takeCards[F](costs.length - oldCards.length)
+      market = costs.zip(oldCards ++ newCards).map { case (cost, card) => CostedCard(cost, card) }
+      updated <- StateT.set(board.copy(market = Market(market)))
+    } yield updated
 
   /**
     * Purchase a card from the market

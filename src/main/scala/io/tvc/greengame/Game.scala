@@ -41,7 +41,7 @@ object Game {
     * Run the actual game, should be stack safe due to use of trampolining
     * Repeatedly calls playRound until we're finished
     */
-  def runGame[F[_] : Monad](ai: AI[F], players: Vector[Player]): GameState[F, GameFinished] = {
+  def runGame[F[_] : Monad : Random](ai: AI[F], players: Vector[Player]): GameState[F, GameFinished] = {
 
     type BoardReaderF[A] = BoardReader[F, A]
     type GameStateF[A] = GameState[F, A]
