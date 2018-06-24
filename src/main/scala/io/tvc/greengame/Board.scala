@@ -35,6 +35,7 @@ object Board {
        | - Market: ${board.market.cards.toList.sortBy(_.cost)}
        | - Unused weather cards remaining: ${board.unusedWeather.length}
        | - Unused market cards remaining: ${board.unusedCards.length}
+       | - Discard pile size: ${board.discard.length}
      """.stripMargin
   }
 

@@ -13,6 +13,11 @@ object Game {
 
   type GameState[F[_], A] = StateT[F, Board, A]
   type BoardReader[F[_], A] = ReaderT[F, Board, A]
+
+  object GameState {
+    def unit[F[_] : Applicative]: GameState[F, Unit] = StateT.pure[F, Board, Unit](())
+  }
+
   case class GameFinished(finalPlayers: Vector[Player])
 
   implicit class BoardReaderSyntax[F[_] : Applicative, A](br: BoardReader[F, A]) {
@@ -48,7 +53,7 @@ object Game {
 
     def playRound(players: Vector[Player]): GameStateF[Vector[Player]] = for {
       withCards <- players.traverse(ai.pickCardToPlay).asState
-      scored <- Scoring.applyScores[F](withCards).asState
+      scored <- Scoring.applyScores[F](withCards)
       pickedCards <- scored.traverse(ai.chooseMarketCard)
       _ <- Market.replenishMarket[F]
     } yield pickedCards

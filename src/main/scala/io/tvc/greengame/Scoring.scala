@@ -1,12 +1,12 @@
 package io.tvc.greengame
 
-import cats.Applicative
-import io.tvc.greengame.AI.{Player, PlayerWithCard}
-import io.tvc.greengame.Game.BoardReader
 import cats.data.ReaderT
+import cats.syntax.applicative._
+import cats.{Applicative, Monad}
+import io.tvc.greengame.AI.{Player, PlayerWithCard}
+import io.tvc.greengame.Game.{BoardReader, GameState, _}
 import io.tvc.greengame.Scoring.Token.Green
 import io.tvc.greengame.Weather.Forecast
-import cats.syntax.applicative._
 
 import scala.language.higherKinds
 
@@ -44,7 +44,7 @@ object Scoring {
     * Given a bunch of players who have just chosen cards, apply scores to them
     * then order the list by the most sustainable player
     */
-  def applyScores[F[_]](playerWithCard: Vector[PlayerWithCard])(implicit F: Applicative[F]): BoardReader[F, Vector[Player]] =
+  private def scores[F[_] : Applicative](playerWithCard: Vector[PlayerWithCard]): BoardReader[F, Vector[Player]] =
     ReaderT { board =>
       playerWithCard.map {
         case PlayerWithCard(pl, None) => pl -> List.empty[Token]
@@ -54,4 +54,20 @@ object Scoring {
       .map { case (pl, tokens) => pl.copy(tokens = pl.tokens ++ tokens) }
       .pure[F]
     }
+
+  /**
+    * Given a bunch of players with cards,
+    * add all their cards into the discard pile
+    */
+  private def discardCards[F[_] : Applicative](playerWithCard: Vector[PlayerWithCard]): GameState[F, Unit] =
+    playerWithCard.foldLeft(GameState.unit[F]) { case (state, PlayerWithCard(_, card)) =>
+      state.modify(board => board.copy(discard = board.discard ++ card.toVector))
+    }
+
+  /**
+    * Apply scores to players with cards, that is
+    * add their cards to the discard pile and give them tokens
+    */
+  def applyScores[F[_] : Monad](players: Vector[PlayerWithCard]): GameState[F, Vector[Player]] =
+    discardCards[F](players).flatMap(_ => scores[F](players).asState)
 }
