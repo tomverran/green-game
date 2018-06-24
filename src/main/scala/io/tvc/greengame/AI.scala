@@ -60,7 +60,7 @@ object AI {
       StateT.inspect[F, Board, Option[CostedCard]] { board =>
 
         val upcoming = board.forecasts.tail
-        val affordable = board.market.findAffordable(player.tokens.length)
+        val affordable = board.market.affordable(player.tokens.length)
 
         val bestPerRound: List[CardWithRoi] = upcoming.flatMap { fc =>
           val forecastEstimate = fc.copy(demand = 4) // we're not supposed to know the demand so go with an optimistic estimate

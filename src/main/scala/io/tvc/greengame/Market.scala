@@ -12,8 +12,7 @@ import scala.language.higherKinds
 
 case class Market(cards: Vector[CostedCard]) {
   def remove(card: CostedCard) = Market(cards.filter(_ != card))
-  def findAffordable(maxCost: Int): Vector[CostedCard] = cards.filter(_.cost <= maxCost)
-  def asMap: Map[Int, Card] = cards.map(c => c.cost -> c.card).toMap
+  def affordable(maxCost: Int): Vector[CostedCard] = cards.filter(_.cost <= maxCost)
 }
 
 object Market {
