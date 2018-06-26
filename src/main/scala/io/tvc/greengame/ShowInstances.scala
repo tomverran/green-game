@@ -13,4 +13,7 @@ object ShowInstances {
 
   implicit def nelShow[A : Show]: Show[NonEmptyList[A]] =
     list => list.toList.map(Show[A].show).mkString(", ")
+
+  implicit def optionShow[A : Show]: Show[Option[A]] =
+    _.fold("nothing")(Show[A].show)
 }

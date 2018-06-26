@@ -34,7 +34,7 @@ object AI {
        |Tokens: ${pl.tokens}
      """.stripMargin
 
-  def fairlySensibleAI[F[_]](implicit F: Monad[F]): AI[F] = new AI[F] {
+  def fairlySensibleAI[F[_] : Logger](implicit F: Monad[F]): AI[F] = new AI[F] {
     case class CardWithRoi(roi: Int, costedCard: CostedCard)
 
     /**

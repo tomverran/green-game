@@ -1,12 +1,13 @@
 package io.tvc.greengame
-import cats.{Applicative, Monad, Show}
 import cats.data.StateT
-import io.tvc.greengame.AI.Player
-import io.tvc.greengame.Game.GameState
-import io.tvc.greengame.Market.CostedCard
+import cats.instances.int._
 import cats.syntax.applicative._
 import cats.syntax.show._
-import cats.instances.int._
+import cats.{Monad, Show}
+import io.tvc.greengame.AI.Player
+import io.tvc.greengame.Game.GameState
+import io.tvc.greengame.Logger._
+import io.tvc.greengame.Market.CostedCard
 
 import scala.language.higherKinds
 
@@ -41,11 +42,11 @@ object Market {
     * This function assumes the player can afford the card and that the card is in the market
     * but what can you do
     */
-  def purchase[F[_] : Applicative](player: Player)(costedCard: CostedCard): GameState[F, Player] =
-    StateT { board =>
+  def purchase[F[_] : Monad : Logger](player: Player)(costedCard: CostedCard): GameState[F, Player] =
+    logPurchase[F](player, costedCard).flatMap(_ => StateT { board =>
       (
         board.copy(market = board.market.remove(costedCard)),
         player.copy(hand = player.hand :+ costedCard.card, tokens = player.tokens - costedCard.cost)
       ).pure[F]
-    }
+    })
 }

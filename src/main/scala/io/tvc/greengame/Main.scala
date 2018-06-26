@@ -14,7 +14,8 @@ object Main extends App {
     for {
       (board, players) <- Board.setup[WriterT[IO, EventLog, ?]]
       finished <- Game.runGame[WriterT[IO, EventLog, ?]](AI.fairlySensibleAI, players).runA(board)
-    } yield finished
+      _ <- WriterT.tell[IO, EventLog](Vector(finished))
+    } yield ()
   ).written
    .flatMap(_.traverse[IO, Unit](l => IO(println(show"$l"))))
    .unsafeRunSync
