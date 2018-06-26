@@ -1,11 +1,14 @@
 package io.tvc.greengame
 
-import cats.data.{NonEmptyList, ReaderT, StateT, WriterT}
+import cats.data.{NonEmptyList, ReaderT, StateT}
+import cats.data.StateT._
 import cats.instances.vector._
 import cats.syntax.functor._
 import cats.syntax.traverse._
 import cats.{Applicative, Monad}
 import io.tvc.greengame.AI.Player
+import io.tvc.greengame.Logger._
+import scala.Function.const
 
 import scala.language.higherKinds
 
@@ -18,7 +21,6 @@ object Game {
     def unit[F[_] : Applicative]: GameState[F, Unit] = StateT.pure[F, Board, Unit](())
   }
 
-  case class Log(board: Board, players: Vector[Player])
   implicit class BoardReaderSyntax[F[_] : Applicative, A](br: BoardReader[F, A]) {
 
     /**
@@ -33,39 +35,37 @@ object Game {
     * Will return a left of GameFinished if we're out of forecasts
     * or a Right of players if the game should continue with the current player state
     */
-  def checkGameFinished[F[_]](players: Vector[Player])(implicit F: Applicative[F]): GameState[F, Either[Vector[Player], Log]] =
+  def checkGameFinished[F[_]](players: Vector[Player])(implicit F: Applicative[F]): GameState[F, Either[Vector[Player], GameEnd]] =
     StateT { board =>
       board.forecasts.tail match {
-        case Nil => F.pure(board -> Right(Log(board, players)))
+        case Nil => F.pure(board -> Right(GameEnd(board, players)))
         case h +: t => F.pure(board.copy(forecasts = NonEmptyList(h, t)) -> Left(players))
       }
     }
+
+  def lift[F[_]: Monad, A](fa: F[A]): GameState[F, A] =
+    StateT.liftF[F, Board, A](fa)
 
   /**
     * Run the actual game, should be stack safe due to use of trampolining
     * Repeatedly calls playRound until we're finished
     */
-  def runGame[F[_] : Monad : Random](ai: AI[F], players: Vector[Player]): GameState[F, Vector[Log]] = {
+  def runGame[F[_] : Monad : Random : Logger](ai: AI[F], players: Vector[Player]): GameState[F, GameEnd] = {
 
-    type GameStateF[A] = GameState[F, A]
-    type BoardReaderF[A] = BoardReader[F, A]
-    type GameLog[A] = WriterT[GameStateF, Vector[Log], A]
-    def lift[A](v: GameStateF[A]): GameLog[A] = WriterT.liftF[GameStateF, Vector[Log], A](v)
-
-    def playRound(players: Vector[Player]): GameStateF[Vector[Player]] = for {
+    def playRound(players: Vector[Player]): GameState[F, Vector[Player]] = for {
       withCards <- players.traverse(ai.pickCardToPlay).asState
+      _ <- withCards.traverse(logCardPlayed[F])
       scored <- Scoring.applyScores[F](withCards)
       pickedCards <- scored.traverse(ai.chooseMarketCard)
       _ <- Market.replenishMarket[F]
     } yield pickedCards
 
-    Monad[GameLog].tailRecM(players) { players =>
+    Monad[GameState[F, ?]].tailRecM(players) { players =>
       for {
-        board <- lift(StateT.get)
-        _ <- WriterT.tell[GameStateF, Vector[Log]](Vector(Log(board, players)))
-        players <- lift(playRound(players))
-        result <- lift(checkGameFinished[F](players))
+        _ <- logGame(RoundBegin(_, players))
+        players <- playRound(players)
+        result <- checkGameFinished[F](players)
       } yield result
-    }.run.map { case (log, last) => log :+ last }
+    }
   }
 }

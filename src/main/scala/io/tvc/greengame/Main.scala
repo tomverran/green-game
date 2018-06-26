@@ -1,18 +1,21 @@
 package io.tvc.greengame
+import cats.data.WriterT
 import cats.effect.IO
 import cats.syntax.show._
 import io.tvc.greengame.ShowInstances._
-import io.tvc.greengame.Random.syncRandom
 import cats.syntax.traverse._
 import cats.instances.vector._
-import AI.playerShow
+import io.tvc.greengame.Logger.EventLog
+import io.tvc.greengame.Random.syncRandom
+import io.tvc.greengame.ShowInstances._
 
 object Main extends App {
   (
     for {
-      (board, players) <- Board.setup[IO]
-      log <- Game.runGame[IO](AI.fairlySensibleAI, players).runA(board)
-      unit <- log.traverse[IO, Unit](l => IO(println(show"${l.board}" +vectorShow(playerShow).show(l.players))))
-    } yield unit
-  ).unsafeRunSync
+      (board, players) <- Board.setup[WriterT[IO, EventLog, ?]]
+      finished <- Game.runGame[WriterT[IO, EventLog, ?]](AI.fairlySensibleAI, players).runA(board)
+    } yield finished
+  ).written
+   .flatMap(_.traverse[IO, Unit](l => IO(println(show"$l"))))
+   .unsafeRunSync
 }
