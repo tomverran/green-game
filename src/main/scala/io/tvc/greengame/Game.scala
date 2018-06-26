@@ -62,7 +62,7 @@ object Game {
 
     Monad[GameState[F, ?]].tailRecM(players) { players =>
       for {
-        _ <- logGame(RoundBegin(_, players))
+        _ <- logGame[F](RoundBegin(_, players))
         players <- playRound(players)
         result <- checkGameFinished[F](players)
       } yield result
