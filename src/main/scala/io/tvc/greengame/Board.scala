@@ -14,6 +14,7 @@ import io.tvc.greengame.Random._
 import io.tvc.greengame.ShowInstances._
 import io.tvc.greengame.Weather.Forecast
 import cats.syntax.applicative._
+import io.tvc.greengame.Scoring.Tokens
 
 import scala.language.higherKinds
 
@@ -97,7 +98,7 @@ object Board {
     */
   def createPlayers(names: Vector[String], playerCards: Vector[Card]): Vector[Player] =
     playerCards.grouped(3).toVector.zip(names).map { case (cards, name) =>
-      Player(name, cards, tokens = Vector.empty)
+      Player(name, cards, tokens = Tokens.tokensMonoid.empty)
     }
 }
 

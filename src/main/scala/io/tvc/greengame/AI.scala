@@ -8,7 +8,6 @@ import cats.{Monad, Show}
 import io.tvc.greengame.AI.{Player, PlayerWithCard}
 import io.tvc.greengame.Game.{BoardReader, GameState}
 import io.tvc.greengame.Market.CostedCard
-import io.tvc.greengame.Scoring.Token.{Black, Green}
 import io.tvc.greengame.Scoring._
 import io.tvc.greengame.ShowInstances._
 
@@ -25,15 +24,15 @@ trait AI[F[_]] {
 
 object AI {
 
-  case class Player(name: String, hand: Vector[Card], tokens: Vector[Token])
+  case class Player(name: String, hand: Vector[Card], tokens: Tokens)
   case class PlayerWithCard(player: Player, card: Option[Card])
 
   implicit val playerShow: Show[Player] =
     pl => show"""
        |Name: ${pl.name}
        |Hand: ${pl.hand}
-       |Green: ${pl.tokens.count(_ == Green)}
-       |Black: ${pl.tokens.count(_ == Black)}
+       |Green: ${pl.tokens.green}
+       |Black: ${pl.tokens.black}
      """.stripMargin
 
   def fairlySensibleAI[F[_]](implicit F: Monad[F]): AI[F] = new AI[F] {
@@ -46,7 +45,7 @@ object AI {
       */
     def pickCardToPlay(player: Player): BoardReader[F, PlayerWithCard] =
       ReaderT { board =>
-        player.hand.sortBy(score(board.forecasts.head)(_).length * -1) match {
+        player.hand.sortBy(score(board.forecasts.head)(_).all * -1) match {
           case chosen +: others => F.pure(PlayerWithCard(player.copy(hand = others), Some(chosen)))
           case Vector() => F.pure(PlayerWithCard(player, None))
         }
@@ -60,11 +59,11 @@ object AI {
       StateT.inspect[F, Board, Option[CostedCard]] { board =>
 
         val upcoming = board.forecasts.tail
-        val affordable = board.market.affordable(player.tokens.length)
+        val affordable = board.market.affordable(player.tokens.all)
 
         val bestPerRound: List[CardWithRoi] = upcoming.flatMap { fc =>
           val forecastEstimate = fc.copy(demand = 4) // we're not supposed to know the demand so go with an optimistic estimate
-          val returns = affordable.map(card => CardWithRoi(score(forecastEstimate)(card.card).length - card.cost, card))
+          val returns = affordable.map(card => CardWithRoi(score(forecastEstimate)(card.card).all - card.cost, card))
           val bestRoi = returns.sortBy(_.roi * -1).headOption
           bestRoi
         }

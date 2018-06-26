@@ -45,7 +45,7 @@ object Market {
     StateT { board =>
       (
         board.copy(market = board.market.remove(costedCard)),
-        player.copy(hand = player.hand :+ costedCard.card, tokens = player.tokens.drop(costedCard.cost))
+        player.copy(hand = player.hand :+ costedCard.card, tokens = player.tokens - costedCard.cost)
       ).pure[F]
     }
 }

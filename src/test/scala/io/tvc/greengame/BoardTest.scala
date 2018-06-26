@@ -13,7 +13,7 @@ class BoardTest extends WordSpec with Matchers with Inspectors {
     "Produce three players with three cards each and no tokens" in {
       players.length shouldBe 3
       forAll(players)(_.hand.length shouldBe 3)
-      forAll(players)(_.tokens.length shouldBe 0)
+      forAll(players)(_.tokens.all shouldBe 0)
     }
 
     "Produce a weather forecast of 7 days with reasonable demands" in {

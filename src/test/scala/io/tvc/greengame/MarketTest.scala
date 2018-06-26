@@ -1,12 +1,15 @@
 package io.tvc.greengame
 import cats.Id
+import io.tvc.greengame.AI.Player
 import io.tvc.greengame.Board.setup
-import io.tvc.greengame.Market.{costs, replenishMarket}
+import io.tvc.greengame.Card.Coal
+import io.tvc.greengame.Market.{CostedCard, costs, replenishMarket}
+import io.tvc.greengame.Scoring.Tokens
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 
 class MarketTest extends WordSpec with Inspectors with Matchers {
 
-  val (board, _) = setup[Id]
+  val (board, player :+ _) = setup[Id]
 
   "Market replenish function" when {
 
@@ -43,6 +46,21 @@ class MarketTest extends WordSpec with Inspectors with Matchers {
       "Have all the right costs" in {
         replenished.map(_.cost) shouldBe Market.costs
       }
+    }
+  }
+
+  "Market purchase function" should {
+
+    val coalBoard = board.copy(market = Market(Vector(CostedCard(3, Coal(3)))))
+    val coalPlayer = Player("Dougal Trimp", Vector.empty, Tokens(black = 2, green = 2))
+    val (newBoard, player) = Market.purchase(coalPlayer)(coalBoard.market.cards.head).run(coalBoard)
+
+    "Use black tokens to pay for cards before green ones" in {
+      player.tokens shouldEqual Tokens(black = 0, green = 1)
+    }
+
+    "Remove the purchased card from the market" in {
+      newBoard.market.cards.isEmpty shouldEqual true
     }
   }
 }
