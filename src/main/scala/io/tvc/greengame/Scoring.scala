@@ -3,12 +3,14 @@ package io.tvc.greengame
 import cats.data.ReaderT
 import cats.kernel.Monoid
 import cats.syntax.applicative._
-import cats.{Applicative, Monad}
+import cats.{Applicative, Monad, Show}
 import io.tvc.greengame.AI.{Player, PlayerWithCard}
 import io.tvc.greengame.Game.{BoardReader, GameState, _}
 import io.tvc.greengame.Weather.Forecast
 import io.tvc.greengame.Scoring.Tokens._
 import cats.syntax.semigroup._
+import cats.syntax.show._
+import cats.instances.int._
 
 import scala.language.higherKinds
 
@@ -28,6 +30,9 @@ object Scoring {
       def combine(x: Tokens, y: Tokens): Tokens = Tokens(x.black + y.black, x.green + y.green)
       def empty: Tokens = Tokens(black = 0, green = 0)
     }
+
+    implicit val showTokens: Show[Tokens] =
+      t => show"Green: ${t.green}, Black: ${t.black}"
 
     implicit val sorting: Ordering[Tokens] =
       Ordering.by(_.green * -1)

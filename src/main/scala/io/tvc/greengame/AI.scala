@@ -31,8 +31,7 @@ object AI {
     pl => show"""
        |Name: ${pl.name}
        |Hand: ${pl.hand}
-       |Green: ${pl.tokens.green}
-       |Black: ${pl.tokens.black}
+       |Tokens: ${pl.tokens}
      """.stripMargin
 
   def fairlySensibleAI[F[_]](implicit F: Monad[F]): AI[F] = new AI[F] {

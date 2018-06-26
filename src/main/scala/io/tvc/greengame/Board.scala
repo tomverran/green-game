@@ -75,7 +75,7 @@ object Board {
       names <- Vector("Greg", "Hope", "Tom", "Michael", "Erica", "Josh").shuffle
       weatherDeck <- (Weather.all ++ Weather.all ++ Weather.all ++ Weather.all).shuffle
       resourceDeck <- (0 until 5).map(_ => Card.all).toVector.flatten.shuffle
-      demands <- (0 until 7).toVector.traverse(_ => Random[F].nextInt(6))
+      demands <- (0 until 7).toVector.traverse(_ => Random[F].nextInt(6).map(_ + 1))
     } yield {
 
       val (weather, remainingWeather) = weatherDeck.splitAt(7)

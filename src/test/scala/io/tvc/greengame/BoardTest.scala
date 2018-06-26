@@ -17,7 +17,7 @@ class BoardTest extends WordSpec with Matchers with Inspectors {
     }
 
     "Produce a weather forecast of 7 days with reasonable demands" in {
-      forAll(board.forecasts.toList)(_.demand shouldBe Random[Id].nextInt(6))
+      forAll(board.forecasts.toList)(_.demand shouldBe 1 + Random[Id].nextInt(6))
       board.forecasts.length shouldBe 7
     }
 
